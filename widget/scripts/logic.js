@@ -33,6 +33,10 @@
     return (n / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
   }
 
+  function cleanClientId(value) {
+    return String(value == null ? "" : value).trim().replace(/^['"]+|['"]+$/g, "");
+  }
+
   function formatUptime(startedAt, now) {
     const start = Date.parse(startedAt);
     if (!Number.isFinite(start)) return "—";
@@ -245,7 +249,7 @@
 
   return {
     SCOPES,
-    AD_LENGTHS,
+    cleanClientId,
     SLOW_SECONDS,
     FOLLOWER_MINUTES,
     formatCount,

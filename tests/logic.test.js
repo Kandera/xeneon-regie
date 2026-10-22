@@ -9,6 +9,12 @@ test("formatCount matches the dashboard scale", () => {
   assert.equal(R.formatCount(null), "—");
 });
 
+test("cleanClientId strips quotes and whitespace", () => {
+  assert.equal(R.cleanClientId("  q0mctk30sczzrmtfny5l3rnm7u7hs9  "), "q0mctk30sczzrmtfny5l3rnm7u7hs9");
+  assert.equal(R.cleanClientId("'abc'"), "abc");
+  assert.equal(R.cleanClientId(""), "");
+});
+
 test("formatUptime is h:mm:ss", () => {
   const start = "2026-10-22T10:00:00.000Z";
   const now = Date.parse("2026-10-22T11:28:47.000Z");

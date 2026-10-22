@@ -39,22 +39,33 @@
     clear: '<svg viewBox="0 0 24 24"><path d="M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13"/></svg>',
   };
 
-  function prop(name) {
+  function readGlobal(name) {
+    try {
+      if (typeof twitchClientId !== "undefined" && name === "twitchClientId" && twitchClientId != null && twitchClientId !== "") return twitchClientId;
+    } catch (e) {}
+    try {
+      if (typeof raidLogin !== "undefined" && name === "raidLogin" && raidLogin != null && raidLogin !== "") return raidLogin;
+    } catch (e) {}
+    try {
+      const value = eval(name);
+      if (value != null && value !== "") return value;
+    } catch (e) {}
     try {
       if (Object.prototype.hasOwnProperty.call(window, name)) {
         const value = window[name];
         if (value != null && value !== "") return value;
       }
     } catch (e) {}
-    try {
-      const value = Function('return typeof ' + name + ' !== "undefined" ? ' + name + ' : undefined')();
-      if (value != null && value !== "") return value;
-    } catch (e) {}
     return "";
   }
 
+  function prop(name) {
+    return readGlobal(name);
+  }
   function clientId() {
-    return String(prop("twitchClientId") || "").trim();
+    const fromIcue = R.cleanClientId(readGlobal("twitchClientId"));
+    if (fromIcue) return fromIcue;
+    return R.cleanClientId(loadStore().clientId);
   }
 
   function storageKey() {
@@ -126,13 +137,27 @@
     const title = el("h1", "", kind === "client" ? "Client ID fehlt" : "Mit Twitch verbinden");
     gate.append(title);
     if (kind === "client") {
-      gate.append(el("p", "", "In iCUE unter dem Widget die Twitch Client ID eintragen. App auf dev.twitch.tv anlegen, OAuth Redirect http://localhost, Client-Typ Public. Ein Secret braucht das Widget nicht."));
-      const button = el("button", "", "Konsole öffnen");
-      button.type = "button";
-      button.addEventListener("click", () => openLink("https://dev.twitch.tv/console/apps"));
-      gate.append(button);
+      state.phase = "client";
+      gate.append(el("p", "", "Client ID unten ins Feld oder in die iCUE-Einstellungen. App auf dev.twitch.tv, Redirect http://localhost, Typ Public. Kein Secret."));
+      const input = document.createElement("input");
+      input.placeholder = "Client ID";
+      input.autocomplete = "off";
+      input.value = loadStore().clientId || "";
+      const save = el("button", "", "Übernehmen");
+      save.type = "button";
+      save.addEventListener("click", () => {
+        const id = R.cleanClientId(input.value);
+        if (!id) return toast("Client ID fehlt");
+        saveStore({ clientId: id });
+        reconcile();
+      });
+      const open = el("button", "ghost", "Konsole öffnen");
+      open.type = "button";
+      open.addEventListener("click", () => openLink("https://dev.twitch.tv/console/apps"));
+      gate.append(input, save, open);
       return;
     }
+    state.phase = kind;
     if (kind === "code") {
       gate.append(el("p", "", "Code auf twitch.tv/activate freigeben. Danach verbindet sich der eigene Chat von selbst."));
       gate.append(el("p", "code", extra.code));
@@ -814,15 +839,19 @@
   }
 
   function logout() {
+    const kept = clientId();
     state.generation += 1;
+    state.entered = false;
+    state.phase = "";
     clearTimeout(state.pollTimer);
     clearInterval(state.statTimer);
     closeSocket();
     clearStore();
+    if (kept) saveStore({ clientId: kept });
     state.session = null;
     state.messages = [];
     state.activity = [];
-    showGate("login");
+    showGate(kept ? "login" : "client");
   }
 
   function demo() {
@@ -846,24 +875,54 @@
     showDesk();
   }
 
-  function boot() {
-    if (state.booted) return;
-    state.booted = true;
+  function reconcile() {
     applyTheme();
-    if (new URLSearchParams(location.search).get("demo") === "1") return demo();
-    const stored = loadStore();
-    if (stored.session && stored.session.clientId === clientId() && stored.session.accessToken) {
-      state.session = stored.session;
-      enter().catch((e) => { toast(e.message); showGate("login", e.message); });
+    if (state.demo || state.phase === "code") return;
+    const id = clientId();
+    if (!id) {
+      if (state.phase !== "client") showGate("client");
       return;
     }
-    if (!clientId()) return showGate("client");
-    showGate("login");
+    if (state.session && state.session.clientId && state.session.clientId !== id) {
+      logout();
+      return;
+    }
+    if (state.entered) return;
+    const stored = loadStore();
+    if (stored.session && stored.session.clientId === id && stored.session.accessToken) {
+      state.entered = true;
+      state.phase = "desk";
+      state.session = stored.session;
+      enter().catch((error) => {
+        state.entered = false;
+        state.phase = "";
+        toast(error.message);
+        showGate("login", error.message);
+      });
+      return;
+    }
+    if (state.phase !== "login") showGate("login");
   }
 
-  function onProps() {
-    applyTheme();
-    if (state.session && state.session.clientId && state.session.clientId !== clientId()) logout();
+  function boot() {
+    if (new URLSearchParams(location.search).get("demo") === "1") {
+      if (!state.demo) {
+        state.demo = true;
+        demo();
+      }
+      return;
+    }
+    reconcile();
+    if (!state.propWatch) {
+      state.propWatch = setInterval(() => {
+        if (state.phase === "desk" || state.phase === "code" || state.phase === "login") {
+          clearInterval(state.propWatch);
+          state.propWatch = 0;
+          return;
+        }
+        reconcile();
+      }, 400);
+    }
   }
 
   $("log").addEventListener("scroll", () => {
@@ -879,7 +938,7 @@
   });
   document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeSheet(); });
 
-  window.icueEvents = { onICUEInitialized: boot, onDataUpdated: onProps };
+  window.icueEvents = { onICUEInitialized: boot, onDataUpdated: boot };
   icueEvents = window.icueEvents;
   if (typeof iCUE_initialized !== "undefined" && iCUE_initialized) boot();
   else window.addEventListener("DOMContentLoaded", boot);
