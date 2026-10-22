@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Regie</title>
+    <link rel="icon" type="image/svg+xml" href="resources/icon.svg" />
+    <link rel="stylesheet" href="styles/style.css" />
+    <meta name="x-icue-property" content="twitchClientId" data-label="Twitch Client ID" data-type="textfield" data-default="''" />
+    <meta name="x-icue-property" content="raidLogin" data-label="Raid-Ziel" data-type="textfield" data-default="''" />
+    <meta name="x-icue-property" content="textColor" data-label="Text" data-type="color" data-default="'#F4F4F8'" />
+    <meta name="x-icue-property" content="accentColor" data-label="Akzent" data-type="color" data-default="'#7C5CFF'" />
+    <meta name="x-icue-property" content="backgroundColor" data-label="Hintergrund" data-type="color" data-default="'#0C0C10'" />
+    <script id="x-icue-groups" type="application/json">
+      [
+        { "title": "Twitch", "properties": ["twitchClientId", "raidLogin"] },
+        { "title": "Erscheinung", "properties": ["textColor", "accentColor", "backgroundColor"] }
+      ]
+    </script>
+  </head>
+  <body>
+    <main class="shell">
+      <section id="gate" class="gate" hidden></section>
+      <section id="desk" class="desk" data-pane="chat" hidden>
+        <aside class="rail" id="rail"></aside>
+        <section class="chat">
+          <header class="chat-head">
+            <div class="brand">
+              <p class="kicker">Eigener Chat</p>
+              <h1 id="channel-name">—</h1>
+            </div>
+            <p class="live" id="live-pill">Offline</p>
+            <div class="pills" id="mode-pills"></div>
+            <p class="conn" id="conn">getrennt</p>
+          </header>
+          <div class="log" id="log"></div>
+        </section>
+        <aside class="info">
+          <p class="kicker">Stats</p>
+          <div class="stats" id="stats"></div>
+          <div class="activity-head">
+            <p class="kicker">Aktivität</p>
+            <div class="filters" id="filters"></div>
+          </div>
+          <div class="feed" id="feed"></div>
+        </aside>
+      </section>
+      <nav class="tabs" id="tabs" hidden>
+        <button type="button" data-pane="actions">Aktionen</button>
+        <button type="button" data-pane="chat" class="on">Chat</button>
+        <button type="button" data-pane="info">Stats</button>
+      </nav>
+      <div id="sheet" class="sheet" hidden></div>
+      <p id="toast" class="toast" hidden></p>
+    </main>
+    <script src="scripts/logic.js"></script>
+    <script src="scripts/widget.js"></script>
+  </body>
+</html>
