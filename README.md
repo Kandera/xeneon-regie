@@ -1,6 +1,6 @@
 # Regie
 
-Eigener Twitch-Chat auf dem CORSAIR XENEON EDGE. Nur lesen, kein Schreiben. Links Quick Actions, Mitte der Chat in einer schmalen Spalte, rechts Stats und Aktivität.
+Eigener Twitch-Chat auf dem CORSAIR XENEON EDGE. Nur lesen, kein Schreiben. Links ein Touch-Raster mit Abstand zum Rand, Mitte der Chat, rechts Stats und Aktivität in zwei gleich schmalen Spalten.
 
 ## Einrichten
 

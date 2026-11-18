@@ -187,12 +187,13 @@
   }
 
   function button(key, title, subtitle, className) {
-    const node = el("button", "act" + (className ? " " + className : ""));
+    const armed = !!(state.armed && state.armed.key === key);
+    const node = el("button", "act" + (className ? " " + className : "") + (armed ? " armed" : ""));
     node.type = "button";
     node.dataset.act = key;
     node.innerHTML = ICONS[key] || "";
     const copy = el("span");
-    copy.append(el("b", "", state.armed && state.armed.key === key ? "Sicher?" : title));
+    copy.append(el("b", "", armed ? "Sicher?" : title));
     copy.append(el("small", "", subtitle));
     node.append(copy);
     node.addEventListener("click", () => onAction(key));
@@ -202,20 +203,26 @@
   function renderRail() {
     const view = R.actionState(state.settings, state.shield);
     const rail = $("rail");
+    const actions = el("div", "rail-grid");
+    const send = el("div", "rail-grid rail-send");
     rail.replaceChildren();
+    actions.append(
+      button("emote", "Emote", view.emoteLabel, view.emote ? "on" : ""),
+      button("follower", "Follower", view.followerLabel, view.follower ? "on" : ""),
+      button("subs", "Subs", view.subsLabel, view.subs ? "on" : ""),
+      button("unique", "Unique", view.uniqueLabel, view.unique ? "on" : ""),
+      button("slow", "Slow", view.slowLabel, view.slow ? "on" : ""),
+      button("shield", "Schild", view.shieldLabel, view.shield ? "on" : ""),
+    );
+    send.append(
+      button("ad", "Werbung", "30–180s", ""),
+      button("raid", "Raid", R.normalizeLogin(prop("raidLogin")) || "Ziel wählen", ""),
+      button("clear", "Leeren", "Chat", "danger"),
+    );
     rail.append(el("p", "kicker", "Aktionen"));
-    rail.append(button("emote", "Emote", view.emoteLabel, view.emote ? "on" : ""));
-    rail.append(button("follower", "Follower", view.followerLabel, view.follower ? "on" : ""));
-    rail.append(button("subs", "Subs", view.subsLabel, view.subs ? "on" : ""));
-    rail.append(button("unique", "Unique", view.uniqueLabel, view.unique ? "on" : ""));
-    rail.append(button("slow", "Slow", view.slowLabel, view.slow ? "on" : ""));
-    rail.append(button("shield", "Schild", view.shieldLabel, view.shield ? "on" : ""));
+    rail.append(actions);
     rail.append(el("p", "kicker", "Senden"));
-    rail.append(button("ad", "Werbung", "30–180s", ""));
-    rail.append(button("raid", "Raid", R.normalizeLogin(prop("raidLogin")) || "Ziel wählen", ""));
-    rail.append(button("clear", "Leeren", "Chat", "danger"));
-    const spacer = el("div", "rail-gap");
-    rail.append(spacer);
+    rail.append(send);
     const out = el("button", "ghost", "Abmelden");
     out.type = "button";
     out.addEventListener("click", logout);
